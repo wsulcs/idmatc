@@ -374,6 +374,7 @@ function randomizePun() {
 
 // Set the subtitle randomly...
 randomizePun();
+document.getElementById('subtitle').onclick = randomizePun;
 
 // Set up the ATC volume slider...
 var atcSlider = document.getElementById("atcVolumeSlider");
