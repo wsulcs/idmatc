@@ -367,8 +367,13 @@ var metadataTimeout = null;
 
 // --- Some initialization stepps...
 
+// Pun-subtitle...
+function randomizePun() {
+    document.getElementById('subtitle').innerText = subtitles[Math.floor(Math.random() * subtitles.length)];
+}
+
 // Set the subtitle randomly...
-document.getElementById('subtitle').innerText = subtitles[Math.floor(Math.random() * subtitles.length)];
+randomizePun();
 
 // Set up the ATC volume slider...
 var atcSlider = document.getElementById("atcVolumeSlider");
