@@ -363,6 +363,7 @@ var videos = [];
 var videoIndex = 0;
 var totalVideos = 0;
 var unavailableTimeout = null;
+var metadataTimeout = null;
 
 // --- Some initialization stepps...
 
@@ -451,9 +452,19 @@ function onPlayerStateChange(event) {
 }
 
 function updateMetadataOfPlayingTrack() {
+    if (player === null) {
+        return;
+    }
     var videoMetadata = player.getVideoData();
-    var videoTitle = videoMetadata.author + ' - ' + videoMetadata.title;
-    document.getElementById("videoData").innerText = videoTitle;
+    if (videoMetadata != null) {
+        var videoTitle = 'next track';
+        if (videoMetadata.author === null || videoMetadata.author === '') {
+            videoTitle = videoMetadata.title;
+        } else {
+            videoTitle = videoMetadata.author + ' - ' + videoMetadata.title;
+        }
+        document.getElementById("videoData").innerText = videoTitle;
+    }
 }
 
 // Just in case...
@@ -464,9 +475,11 @@ function onError(event) {
 // Button functions... could probably just do these inline, but /shrug.
 function stopVideo() {
     player.stopVideo();
+    clearTimeout(unavilableTimeout);
 }
 function pause() {
     player.pauseVideo();
+    clearTimeout(unavilableTimeout);
 }
 function unpause() {
     player.playVideo();
@@ -501,32 +514,37 @@ function createVideoList() {
 function getNextVideo() {
     while (true) {
         var vid = videos[videoIndex++];
-        if (playlists[vid.playlistNum].include === true) {
-            return vid.video;
-        }
-
         // If we reach the end, reshuffle and start again.
         if (videoIndex >= totalVideos) {
             createVideoList();
             videoIndex = 0;
         }
+
+        if (playlists[vid.playlistNum].include === true) {
+            return vid.video;
+        }
     }
+}
+
+function onMetadataUpdateTimer() {
+    updateMetadataOfPlayingTrack();
+    metadataTimeout = setTimeout(onMetadataUpdateTimer, 5000);
 }
 
 // Function we call a couple seconds after attempting to cue the track.
 function onNextTrackCallback() {
+    // If we haven't started a track after the timeout for some reason, then try the next track.
     if (player.getCurrentTime() === 0 || player.getPlayerState() === YT.PlayerState.UNSTARTED) {
         playNext();
     }
-
-    updateMetadataOfPlayingTrack();
 }
 
 // Function to play the next track (either because it's the first, the previous one ended, or the user clicked 'skip')
 function playNext() {
     if (unavailableTimeout != null) {
-        unavailableTimeout.clearTimeout();
+        clearTimeout(unavailableTimeout);
     }
     player.cueVideoById(getNextVideo());
-    unavilableTimeout = setTimeout(onNextTrackCallback, 5000); // let's give a 5 second timeout in case the videos don't load
+    unavilableTimeout = setTimeout(onNextTrackCallback, 10000); // let's give a 10 second timeout in case the videos don't load
+    onMetadataUpdateTimer();
 }
